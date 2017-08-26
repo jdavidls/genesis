@@ -1,2 +1,1 @@
-# genesis
-a experimental llvm frontend
+# GENESIS

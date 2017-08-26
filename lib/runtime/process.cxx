@@ -1,0 +1,6 @@
+void gnsProcessStartup() {
+
+}
+
+void gnsProcessShutdown() {
+}

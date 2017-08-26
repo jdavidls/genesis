@@ -1,0 +1,7 @@
+void gnsThreadStartup() {
+
+}
+
+void gnsThreadShutdown() {
+
+}
