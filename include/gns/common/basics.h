@@ -4,6 +4,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define GNS_ASSERT(EXPR) \
+  for(; !(EXPR); (std::cerr << "Assertion: " #EXPR << std::endl), std::abort() )
+
+#define GNS_GLOBAL  __attribute__ ((visibility ("default")))
+#define GNS_LOCAL   __attribute__ ((visibility ("hidden")))
+
+#define GNS_FIBER_LOCAL __attribute((section("gnsfls")))
+#define GNS_NO_STRIP __attribute((used))
+
+
 
 #ifdef __cplusplus
 #define GNS_C_LINKAGE extern "C"
@@ -24,7 +34,7 @@
 
 typedef void gnsUnknow;
 
-typedef struct gnsVoid_t { int _[0]; } gnsVoid;
+typedef struct { int _[0]; } gnsVoid;
 
 
 typedef bool gnsBit;
@@ -51,8 +61,14 @@ typedef float gnsFloatPoint32;
 typedef double gnsFloatPoint64;
 */
 
+typedef struct { void* descriptor; void* data; } gnsObject;
+
 #ifdef __cplusplus
+#include <iostream>
+
 namespace gns {
+
+  //constexpr auto error = std::cerr;
 
   using Unknow = gnsUnknow;
 
@@ -66,5 +82,4 @@ namespace gns {
 
 }
 
-static assert(1);
 #endif

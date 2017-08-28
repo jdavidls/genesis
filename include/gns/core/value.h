@@ -11,8 +11,16 @@ typedef struct gnsAllocatorStructure const* gnsAllocator;
 
 GNS_C_LINKAGE_BEGIN
 
+  /* AllocateValue / DeallocateValue
+
+    Aloja y desaloja un valor, retornando una referencia al mismo.
+
+  */
+
   gnsValue gnsAllocate(gnsAllocator, const gnsType, gnsNatural rank, ...);
   void gnsDeallocate(gnsValue);
+
+  
 
     // <gns/core/arithmetic>
   gnsValue gnsAdd(gnsValue, gnsValue);
