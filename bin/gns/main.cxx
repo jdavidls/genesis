@@ -11,7 +11,7 @@ int main(int argc, char* argv[]) {
 
   auto fiber = gnsFiberAllocate();
 
-  GNS_LOG( fiber );
+  GNS_LOG( fiber.continuator );
 
 
   return 0;

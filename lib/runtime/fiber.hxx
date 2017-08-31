@@ -1,19 +1,23 @@
 #pragma once
 #include <setjmp.h>
+#include <ucontext.h>
 
 #include <gns/runtime/fiber.h>
 
 
-struct alignas(64) gnsFiberStructure {
 
-  struct {
-    void* pointer;
-    gns::Natural length;
-  } dataBuffer;
 
-  jmp_buf jumpBuffer;
+// at fiber server
+struct gnsFiberContinuator {
 
-  gnsFiber yieldTo[1];
+  // INPUT DATA
+
+  gnsFiberTracker * tracker;
+
+  // OUTPUT DATA:
+  union {
+    jmp_buf jumpBuffer;
+    //sigjmp_buf jumpBuffer;
+    //ucontext_t ucontext;
+  };
 };
-
-extern thread_local gnsFiber gnsCurrentFiber;

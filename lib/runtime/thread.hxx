@@ -3,7 +3,7 @@
 #include "fiber.hxx"
 
 struct gnsThreadStructure {
-    gnsFiberStructure mainFiber;
+    //gnsFiberStructure mainFiber;
 
-    gnsFiber auxFiber;
+    //gnsFiber auxFiber;
 };

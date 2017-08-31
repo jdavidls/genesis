@@ -4,9 +4,9 @@
 GNS_LOCAL thread_local gnsThreadStructure gnsThreadInstance;
 
 gnsThread gnsThreadStartup() {
-  gnsCurrentFiber = &gnsThreadInstance.mainFiber;
+  //gnsCurrentFiber = &gnsThreadInstance.mainFiber;
 
-  gnsThreadInstance.auxFiber = gnsFiberAllocate();
+  //gnsThreadInstance.auxFiber = gnsFiberAllocate();
 
   return &gnsThreadInstance;
 }
