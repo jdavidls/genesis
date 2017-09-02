@@ -9,6 +9,9 @@ struct {                            \
   void* instance;                   \
 };
 
+//#define GNS_OBJECT_IS_KNOW(O) ((O).reflector)
+
+
 GNS_C_LINKAGE_BEGIN
 
   //typedef GNS_OBJECT_TYPE( gnsType ) gnsObject;
@@ -21,14 +24,10 @@ namespace gns {
   template<typename Reflector> struct Object;
 
   /*
-  struct Object {
+  struct Iterable {
 
     Object(): self{ nullptr, nullptr } {  }
 
-    inline Bit isUnknow() { return self.reflector === nullptr; }
-    inline Bit isKnow() { return self.reflector !== nullptr; }
-
-    inline Bit isVoid() { return self.pointer === nullptr; }
 
   };
   */
@@ -41,7 +40,7 @@ namespace gns {
 struct gnsIterator {
   GNS_REFLECTOR_HEAD;
 
-  
+
 
 }
 

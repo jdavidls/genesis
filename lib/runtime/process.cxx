@@ -1,13 +1,15 @@
 #include "thread.hxx"
 #include "process.hxx"
 
-GNS_LOCAL gnsProcessStructure gnsProcessInstance;
+static gnsProcess currentProcess = {
 
-gnsProcess gnsProcessStartup() {
+};
 
-  gnsProcessInstance.mainThread = gnsThreadStartup();
+const volatile gnsProcess *gnsProcessStartup() {
 
-  return &gnsProcessInstance;
+  currentProcess.mainThread = gnsThreadStartup();
+
+  return &currentProcess;
 }
 
 void gnsProcessShutdown() {

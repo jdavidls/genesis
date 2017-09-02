@@ -2,11 +2,12 @@
 
 #include <gns/common/basics.h>
 
-typedef struct gnsThreadStructure* gnsThread;
 
 GNS_C_LINKAGE_BEGIN
 
-  gnsThread gnsThreadStartup();
+  struct gnsThread;
+
+  const volatile gnsThread* gnsThreadStartup();
   void gnsThreadShutdown();
 
 GNS_C_LINKAGE_END

@@ -1,11 +1,19 @@
 #pragma once
 #include <setjmp.h>
-#include <ucontext.h>
+//#include <ucontext.h>
 
 #include <gns/runtime/fiber.h>
 
 
 
+struct gnsFiber {
+  gnsBytes stack;
+//  gnsNatural length;
+//  gnsFiberModuleLocals* module;
+};
+
+extern gnsFiber *gnsFiberGetCurrent();
+//extern gnsFiber *gnsFiberSetCurrent(gnsFiber *);
 
 // at fiber server
 struct gnsFiberContinuator {
@@ -21,3 +29,11 @@ struct gnsFiberContinuator {
     //ucontext_t ucontext;
   };
 };
+
+
+#ifdef __cplusplus
+namespace gns {
+
+
+}
+#endif

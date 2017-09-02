@@ -3,16 +3,39 @@
 #include <gns/common/basics.h>
 #include <gns/runtime/fiber.h>
 #include <gns/runtime/process.h>
+#include <gns/common/array.h>
+
+using namespace gns;
+
+
+GNS_FIBER_LOCAL_DEF(int) local = 88;
 
 
 int main(int argc, char* argv[]) {
-  gns::Process proc(argc, argv);
+  Process proc(argc, argv);
 
 
-  auto fiber = gnsFiberAllocate();
+//  auto ref = GNS_FIBER_LOCAL_LOOKUP(local, decltype(&local.initValue));
+  Array<int> array({1,2,3});
 
+  //++array.length ;
+  --array.length;
+  array.push(7);
+
+
+  GNS_LOG( sizeof(array) );
+  GNS_LOG( array.length );
+  GNS_LOG( array[-1] );
+
+/*
+  GNS_LOG( GNS_SECTION_SIZE(fiber_local) );
+  GNS_LOG( GNS_SECTION_OFFSET_OF(fiber_local, myVar) );
+  GNS_LOG( GNS_SECTION_CONTAINS(fiber_local, myVar) );
+*/
+/*
+  Fiber fiber;
   GNS_LOG( fiber.continuator );
-
+*/
 
   return 0;
 }

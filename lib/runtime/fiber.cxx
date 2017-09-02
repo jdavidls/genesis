@@ -1,20 +1,40 @@
 #include <iostream>
+#include <utility>
+
 
 #include <sys/mman.h>
 #include <ucontext.h>
 #include <setjmp.h>
-#include <dlfcn.h>
-#include <link.h>
-
 #include <string.h>
-
 #include <errno.h>
 
 #include "fiber.hxx"
 
 using namespace gns;
 
-static void gnsFiberEntry(unsigned, unsigned);
+
+namespace {
+  static thread_local gnsFiber *__currentFiber = nullptr;
+
+
+  static gnsFiber * gnsFiberSetCurrent(gnsFiber* fiber) {
+    auto result = __currentFiber;
+    __currentFiber = fiber;
+    return result;
+  }
+
+  static thread_local struct {
+     gnsFiberContinuator* ownerContinuator;
+     gnsBytes stack;
+  } __fiberInit;
+}
+
+gnsFiber * gnsFiberGetCurrent() {
+  return __currentFiber;
+}
+
+
+static void gnsFiberEntry();
 
 static Natural pageLength = 4096; // proces global var.
 static Natural stackLength = 1*1016*1024;
@@ -48,10 +68,12 @@ gnsFiberTracker gnsFiberAllocate() {
     ucontext.uc_stack.ss_sp = stack + pageLength;
     ucontext.uc_stack.ss_size = stackLength;
     ucontext.uc_link = nullptr; // TODO vincular a un recoletor de fibers.
-  GNS_LOG(&selfContinuator);
-    makecontext(&ucontext, (void(*)())&gnsFiberEntry, 2,
-        (__uint32_t)((__uint64_t)&selfContinuator >> 32),
-        (__uint32_t)((__uint64_t)&selfContinuator /*& 0xFFFFFFFF*/));
+
+    __fiberInit.ownerContinuator = &selfContinuator;
+    __fiberInit.stack = { { stackLength }, stack };
+
+    // pasa estas variables por thread local
+    makecontext(&ucontext, (void(*)())&gnsFiberEntry, 0);
 
     setcontext(&ucontext);
   }
@@ -60,11 +82,58 @@ gnsFiberTracker gnsFiberAllocate() {
 }
 
 
-int gnsFiberJump(gnsFiberTracker * tracker, int sendCmd) {
-  gnsFiberContinuator selfContinuator;
-  selfContinuator.tracker = tracker;
+void gnsFiberEntry() {
 
-  auto recvCmd = setjmp(selfContinuator.jumpBuffer);
+  gnsFiber self = {
+    __fiberInit.stack
+
+  };
+
+  //auto owner =
+  gnsFiberSetCurrent(&self);
+
+
+  FiberTracker ownerTracker( std::move(__fiberInit.ownerContinuator) );
+
+
+
+  GNS_LOG(ownerTracker.continuator);
+
+  while(true) {
+
+    //gnsFiberStartup();
+
+    ownerTracker.jump();
+
+    /*
+    // Fiber initialization protocol
+    {
+      // allocateObject( FFI + function pointer ) call with fiber
+      //caller.recv()
+    }
+    */
+  }
+}
+
+
+
+// gns::FiberJump<int> value<T>()
+gnsFiberCommand gnsFiberJump(gnsFiberTracker * tracker, gnsFiberCommand sendCmd) {
+  // todo pop and push de fiber context in the thread local storage
+
+  auto self = gnsFiberGetCurrent();
+
+  gnsFiberContinuator selfContinuator;
+                      selfContinuator.tracker = tracker;
+  auto recvCmd = (gnsFiberCommand) setjmp(selfContinuator.jumpBuffer);
+
+  //auto other =
+  gnsFiberSetCurrent(self);
+  /*
+    puede utilizar self y other (fibers) para conocer el task
+    o el memory manager, de forma que pueda traspasar el objeto de
+    un fiber a otro, tambien puede saber si el objeto esta en la pila
+  */
 
   if( recvCmd == GNS_FIBER_CALLTHROUGH ) {
 
@@ -75,40 +144,21 @@ int gnsFiberJump(gnsFiberTracker * tracker, int sendCmd) {
 
   return recvCmd;
 }
+/*
+swap fiber segments
+*/
 
-void gnsFiberEntry(unsigned _hi_bits, unsigned _lo_bits) {
-  gnsFiberTracker tracker {
-    /*.continuator = */(gnsFiberContinuator*) (
-      ((__uint64_t)_hi_bits << 32) | ((__uint64_t)_lo_bits))
-  };
 
-  GNS_LOG(tracker.continuator);
-
-  //gnsFiberSetInput()
-  gnsFiberJump(&tracker, 1);
-
-}
+//int a_offset =
 
 
 
 void gnsFiberStartup() {
+
   // inicializa los fiber locals, COMO?
-  // establece
+  // entendiendo que ya se encuentra alojado el vector
+  // locals[module]->section
 
-  // inicializa fiber memory manager (allocator)
-  //gnsFiberContinue(gnsFiberCurrent);
-/*
-  if( setjmp(fiber.jumpBuffer) == 0 ) {
-    auto yield = reinterpret_cast<gnsFiber*>(gnsFiberCurrent->dataBuffer.pointer);
-
-    *yield = &fiber;
-
-    GNS_LOG(gnsFiberCurrent);
-
-    longjmp(gnsFiberCurrent->jumpBuffer, 1);
-  }
-*/
-  // via FFI, via delegate, via xxx
 
 }
 

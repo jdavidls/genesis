@@ -1,14 +1,14 @@
 #include "thread.hxx"
 #include "fiber.hxx"
 
-GNS_LOCAL thread_local gnsThreadStructure gnsThreadInstance;
+static thread_local gnsThread currentThread;
 
-gnsThread gnsThreadStartup() {
+const volatile gnsThread* gnsThreadStartup() {
   //gnsCurrentFiber = &gnsThreadInstance.mainFiber;
 
   //gnsThreadInstance.auxFiber = gnsFiberAllocate();
 
-  return &gnsThreadInstance;
+  return &currentThread;
 }
 
 void gnsThreadShutdown() {

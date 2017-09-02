@@ -2,7 +2,7 @@
 #include <gns/runtime/thread.h>
 #include "fiber.hxx"
 
-struct gnsThreadStructure {
+struct gnsThread {
     //gnsFiberStructure mainFiber;
 
     //gnsFiber auxFiber;

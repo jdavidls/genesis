@@ -3,8 +3,6 @@
 
 #include "thread.hxx"
 
-struct gnsProcessStructure {
-  gnsThread mainThread;
+struct gnsProcess {
+  const volatile gnsThread * mainThread;
 };
-
-extern gnsProcessStructure gnsProcessInstance;
