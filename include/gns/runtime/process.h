@@ -2,32 +2,27 @@
 
 #include <gns/common/basics.h>
 
-GNS_C_LINKAGE_BEGIN
+GNS_FORWARD_DECLARE(Process, struct);
 
-  struct gnsProcess;
+GNS_CODE_C(
+  extern gnsProcess* gnsProcessStartup();
+  extern void gnsProcessShutdown();
+);
 
-  const volatile gnsProcess *
-    gnsProcessStartup();
 
-  void
-    gnsProcessShutdown();
-
-GNS_C_LINKAGE_END
-
-#ifdef __cplusplus
-namespace gns {
-
+GNS_CODE_CXX(
+/*
   struct Process {
-    const volatile gnsProcess& self;
+    static
+    const volatile ProcessContext& self;
 
     Process(Natural argc, char* argv[]):
-      self( *gnsProcessStartup() ) {
+      self( *gnsProcessStartup(argc, argv) ) {
 
     }
 
     ~Process() {
       gnsProcessShutdown();
     }
-  };
-}
-#endif
+  };*/
+);

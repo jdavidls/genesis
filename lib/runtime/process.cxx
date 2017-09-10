@@ -1,18 +1,25 @@
+/*
+
+# References
+
+LINUX SIGNALS IN C/C++ [ftp://linuxmafia.com/kb/Devtools/signals.html#SECT5.2]
+
+
+*/
 #include "thread.hxx"
 #include "process.hxx"
 
-static gnsProcess currentProcess = {
+static gnsProcess process;
 
-};
+gnsProcess *gnsProcessStartup() {
+  process.thread = gnsThreadStartup();
 
-const volatile gnsProcess *gnsProcessStartup() {
-
-  currentProcess.mainThread = gnsThreadStartup();
-
-  return &currentProcess;
+  return &process;
 }
 
 void gnsProcessShutdown() {
 
   gnsThreadShutdown();
 }
+
+//void handler()

@@ -12,34 +12,55 @@
 
 using namespace gns;
 
+enum gnsFiberCommand {
 
-namespace {
-  static thread_local gnsFiber *__currentFiber = nullptr;
+  GNS_FIBER_SWAP = 1,
+  GNS_FIBER_DEALLOCATE = 2,
+
+  //GNS_FIBER_CALLTHROUGH = 0,
+};
+
+struct ThreadLocalStorage {
+  Fiber* fiber;
+
+  // SWAP
+  FiberContinuator* continuator;
 
 
-  static gnsFiber * gnsFiberSetCurrent(gnsFiber* fiber) {
-    auto result = __currentFiber;
-    __currentFiber = fiber;
-    return result;
-  }
 
-  static thread_local struct {
-     gnsFiberContinuator* ownerContinuator;
-     gnsBytes stack;
-  } __fiberInit;
-}
+};
 
-gnsFiber * gnsFiberGetCurrent() {
-  return __currentFiber;
-}
-
+static thread_local ThreadLocalStorage threadLocalStorage = {};
 
 static void gnsFiberEntry();
+static ThreadLocalStorage * getTLS();
 
-static Natural pageLength = 4096; // proces global var.
+ // proces global constants var.
+static Natural pageLength = 4096;
 static Natural stackLength = 1*1016*1024;
 
-gnsFiberTracker gnsFiberAllocate() {
+
+/*
+template<>
+  Array<Global<GNS_GLOBAL_SCOPE_FIBER, void>*>
+    GlobalManager<GNS_GLOBAL_SCOPE_FIBER>::globals{};
+*/
+
+
+/*
+void* gnsFiberGlobalLookup(gnsGlobal* global) {
+  auto& manager = __currentFiber->globalManager;
+  return manager.lookup(*global);
+}
+*/
+
+
+
+gnsFiber * gnsFiberGetCurrent() {
+  return threadLocalStorage.fiber;
+}
+
+gnsFiberContinuator* gnsFiberAllocate() {
 
   auto stack = reinterpret_cast<Byte*>(mmap(
     0,                                //  address
@@ -56,54 +77,90 @@ gnsFiberTracker gnsFiberAllocate() {
   GNS_ASSERT( mprotect(stack + pageLength, stackLength, PROT_READ | PROT_WRITE) != -1 )
     std::cerr << "Unable to protect bottom of fiber stack" << strerror(errno) << std::endl;
 
-  gnsFiberTracker tracker;
+  FiberContinuator self = { threadLocalStorage.fiber };
 
-  gnsFiberContinuator selfContinuator;
-  selfContinuator.tracker = &tracker;
+  do {
 
-  if( setjmp(selfContinuator.jumpBuffer) == 0 ) {
-    ucontext_t ucontext;
-    GNS_ASSERT( getcontext(&ucontext) != -1 ); // esto puede ser cacheado.
+    if( setjmp(self.jumpBuffer) == 0 ) {
+      ucontext_t ucontext;
+      GNS_ASSERT( getcontext(&ucontext) == 0 ); // esto puede ser cacheado.
 
-    ucontext.uc_stack.ss_sp = stack + pageLength;
-    ucontext.uc_stack.ss_size = stackLength;
-    ucontext.uc_link = nullptr; // TODO vincular a un recoletor de fibers.
+      ucontext.uc_stack.ss_sp = stack + pageLength;
+      ucontext.uc_stack.ss_size = stackLength;
+      ucontext.uc_link = nullptr; // TODO vincular a un recoletor de fibers.
 
-    __fiberInit.ownerContinuator = &selfContinuator;
-    __fiberInit.stack = { { stackLength }, stack };
+      threadLocalStorage.continuator = &self;
+      //__fiberInit.stack = { { stackLength }, stack };
 
-    // pasa estas variables por thread local
-    makecontext(&ucontext, (void(*)())&gnsFiberEntry, 0);
+      makecontext(&ucontext, (void(*)())&gnsFiberEntry, 0);
+      setcontext(&ucontext);
+    }
 
-    setcontext(&ucontext);
+  }
+  while(false);
+
+  threadLocalStorage.fiber = self.fiber;
+
+  return threadLocalStorage.continuator;
+}
+
+/*
+  IDEA debe almacenar el continuador en la estancia del fiber, para poder
+  realizar un retorno en caso de que el fiber llamado no devuelva el control.
+*/
+
+// SAFE TLS getter for thread swap
+[[gnu::noinline()]]
+static ThreadLocalStorage * getTLS() {
+  return &threadLocalStorage;
+}
+
+gnsFiberContinuator * gnsFiberSwap(gnsFiberContinuator * c_other) {
+  auto other = reinterpret_cast<FiberContinuator*>(c_other);
+
+  auto prevTLS = getTLS();
+  FiberContinuator self = { prevTLS->fiber };
+  int recvCommand;
+
+  // adquiere el mutex del fiber al que va a saltar
+
+  do {
+
+    recvCommand = setjmp(self.jumpBuffer);
+    if ( recvCommand == 0 ) {
+      prevTLS->continuator = &self;
+      longjmp(other->jumpBuffer, 1);
+    }
+
+  }
+  while(false);
+
+  // libera el mutex del fiber que le ha devuelto el control
+
+  auto postTLS = getTLS();
+
+  auto callerFiber = postTLS->fiber;
+  auto callerContinuator = postTLS->continuator;
+  postTLS->fiber = self.fiber;
+
+  if( prevTLS != postTLS ) {
+    // thread swap detected
   }
 
-  return tracker;
+  return callerContinuator;
 }
 
 
 void gnsFiberEntry() {
+  Fiber self;
 
-  gnsFiber self = {
-    __fiberInit.stack
+  gnsFiberStartup(&self);
 
-  };
+  FiberTracker owner( std::move(getTLS()->continuator) );
 
-  //auto owner =
-  gnsFiberSetCurrent(&self);
+  GNS_LOG(owner.continuator);
 
-
-  FiberTracker ownerTracker( std::move(__fiberInit.ownerContinuator) );
-
-
-
-  GNS_LOG(ownerTracker.continuator);
-
-  while(true) {
-
-    //gnsFiberStartup();
-
-    ownerTracker.jump();
+  do {
 
     /*
     // Fiber initialization protocol
@@ -112,56 +169,27 @@ void gnsFiberEntry() {
       //caller.recv()
     }
     */
+
+    owner.swap();
+
   }
+  while(false);
+  //while(fiber.keepAlive);
+
+  gnsFiberShutdown(&self);
+
+  // salta al owner, con un comando DEALLOCATE (que),
+  getTLS()->continuator = nullptr; // TERMINATE SIGNAL
+  longjmp(owner.continuator->jumpBuffer, 1);
 }
 
 
+void gnsFiberStartup(gnsFiber* c_fiber) {
+  auto fiber = reinterpret_cast<Fiber*>(c_fiber);
 
-// gns::FiberJump<int> value<T>()
-gnsFiberCommand gnsFiberJump(gnsFiberTracker * tracker, gnsFiberCommand sendCmd) {
-  // todo pop and push de fiber context in the thread local storage
-
-  auto self = gnsFiberGetCurrent();
-
-  gnsFiberContinuator selfContinuator;
-                      selfContinuator.tracker = tracker;
-  auto recvCmd = (gnsFiberCommand) setjmp(selfContinuator.jumpBuffer);
-
-  //auto other =
-  gnsFiberSetCurrent(self);
-  /*
-    puede utilizar self y other (fibers) para conocer el task
-    o el memory manager, de forma que pueda traspasar el objeto de
-    un fiber a otro, tambien puede saber si el objeto esta en la pila
-  */
-
-  if( recvCmd == GNS_FIBER_CALLTHROUGH ) {
-
-    tracker->continuator->tracker->continuator = &selfContinuator;
-
-    longjmp(tracker->continuator->jumpBuffer, sendCmd);
-  }
-
-  return recvCmd;
-}
-/*
-swap fiber segments
-*/
-
-
-//int a_offset =
-
-
-
-void gnsFiberStartup() {
-
-  // inicializa los fiber locals, COMO?
-  // entendiendo que ya se encuentra alojado el vector
-  // locals[module]->section
-
-
+  threadLocalStorage.fiber = fiber;
 }
 
-void gnsFiberShutdown() {
+void gnsFiberShutdown(gnsFiber* self) {
 
 }

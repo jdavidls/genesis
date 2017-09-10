@@ -3,6 +3,16 @@
 
 #include "thread.hxx"
 
-struct gnsProcess {
-  const volatile gnsThread * mainThread;
-};
+GNS_CODE_C(
+  struct gnsProcess {
+    gnsThread * thread;
+  };
+)
+
+GNS_CODE_CXX(
+  struct Process {
+    GNS_DECLARE_C_COMPAT(Process);
+
+    Thread* thread;
+  };
+)

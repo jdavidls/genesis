@@ -10,7 +10,7 @@ Propiedades de un valor
 
  - rank: natural
  - extent: natural[rank]
- 
+
  - Layout: la estructura a bajo nivel de un valor
 
  - Mutability [constant|variable]
@@ -27,9 +27,7 @@ Propiedades de un valor
  - frame [global|local] Exsiten dos marcos posibles para un valor,
     el marco local se refiere cuando un valor ha sido construido
 
-
 Existen diferentes ciclos de vida para un valor, segun el uso frame
-
 
 
 managerOf(value): constant

@@ -3,37 +3,44 @@
 //#include <ucontext.h>
 
 #include <gns/runtime/fiber.h>
+//#include "inc/global-manager.hxx"
 
+GNS_FORWARD_DECLARE(Fiber, struct);
 
+GNS_CODE_C(
 
-struct gnsFiber {
-  gnsBytes stack;
-//  gnsNatural length;
-//  gnsFiberModuleLocals* module;
-};
-
-extern gnsFiber *gnsFiberGetCurrent();
-//extern gnsFiber *gnsFiberSetCurrent(gnsFiber *);
-
-// at fiber server
-struct gnsFiberContinuator {
-
-  // INPUT DATA
-
-  gnsFiberTracker * tracker;
-
-  // OUTPUT DATA:
-  union {
-    jmp_buf jumpBuffer;
-    //sigjmp_buf jumpBuffer;
-    //ucontext_t ucontext;
+  struct gnsFiber: gnsEmpty {
   };
-};
+
+  struct gnsFiberContinuator {
+    Fiber* fiber;
+    jmp_buf jumpBuffer;
+  };
 
 
-#ifdef __cplusplus
-namespace gns {
+  extern void gnsFiberStartup(gnsFiber* self);
+  extern void gnsFiberShutdown(gnsFiber* self);
+
+)
+
+GNS_CODE_CXX(
+
+  struct Fiber: gnsFiber {
+    //FiberContinuator* continuator;
+    //Bytes stack;
+
+    // fiber next user data structure.
+
+    // es itneresante utilziar el fiber next data structure porque
+    // es en realidad la estructura que lo controla
+    // desde mecanismos de mas alto nivel.
+    // por ejemplo,
+
+  };
+
+  struct FiberContinuator: gnsFiberContinuator {
+
+  };
 
 
-}
-#endif
+)

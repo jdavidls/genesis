@@ -8,8 +8,9 @@ __attribute__((constructor)) void gnsStartup(void) {
   gnsProcessStartup();
 }
 
+
+
 __attribute__((destructor)) void gnsShutdown(void) {
   std::cout << "shutdown" << std::endl;
-
   gnsProcessShutdown();
 }

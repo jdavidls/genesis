@@ -10,10 +10,9 @@ GNS_C_LINKAGE_BEGIN
   struct gnsReflectorAncestor;
 
   struct gnsCast {
-    gnsInteger offset;
     gnsType* type;
+    gnsInteger offset;
   };
-
 
   struct gnsReflector {
     GNS_ARRAY_TYPE(gnsReflectorAncestor, 1) hierarchy;
@@ -26,30 +25,59 @@ GNS_C_LINKAGE_BEGIN
 
 ////////////////////////////////////////////////////////////
 # define GNS_REFLECTION_LEVEL__Type 1
-# define GNS_TYPE_HEAD()  \
-    struct {              \
-      gnsType type;       \
-    }
 
+  // no es constructible, estanciable etc.
+  // Object<Reflector> reflectable;
+  // Object<Iterator> iterable
+  // Object<Descriptor> descriptable -> type
+  // Object<Constructor> constructible (default)
+  // Object<Invokator> invokable; -> function
 
-  struct gnsType {
-    // ffi_type* ffi;
+  struct gnsInvokator {
+    gnsReflector reflector;
+  };
+
+  //
+  struct gnsConstructor {
+    ffi_type ffi;
+
+    // gnsBytes init; este atributo puede estar desnormalizado,
+    // se normalizará a traves de la llamada al atributo
+    // Type->initBuffer
+
+    // constructor
+    // destructor
+
+    gnsReflector reflector;
 
     // gnsTypeAccessor constant
     // gnsTypeAccessor variable
 
   };
 
+  // los dereferenciadores (proxies), tienen
+  
+  struct gnsPointer { // dereferenciator -> dereferenciable
+    gnsConstructor type;
+    const gnsReflector* target;
+  };
+
   struct gnsStructureMember {
-    gnsCast downcast;
+    gnsCast cast;
+    //gnsReflector reflector;
   };
 
-# define GNS_REFLECTION_LEVEL__Structure (GNS_REFLECTION_LEVEL__Type + 1)
   struct gnsStructure {
-    GNS_TYPE_HEAD();
+    //gnsConstructor
+    // embership
+    // iterator (membership iterator)
+    // invokator object invokator
 
-    GNS_ARRAY_TYPE(gnsStructureMember, 1) membership;
   };
+
+  export const gnsType *gnsTypeVoid;
+  export const gnsType *gnsTypeVoid;
+  export const gnsType *gnsTypeInteger;
 
 
 GNS_C_LINKAGE_END
@@ -57,19 +85,25 @@ GNS_C_LINKAGE_END
 #ifdef __cplusplus
 
 namespace gns {
+/*
+  template<typename Up, typename Down>
+    struct Cast {
 
-  struct Type {
-    const gnsType* self;
-
-    Type(const gnsType* type): self(type) {}
-    operator const gnsType* () { return self; }
-
+    };
+*/
+  struct Reflector: gnsReflector {
 
   };
 
-  struct TypeMembership {
-    //const gnsTypeMember*
+  struct Type: gnsType {
+    static constexpr Natural level = 1;
+
   };
+
+  struct Structure: gnsStructure {
+    static constexpr Natural level = Type::level + 1;
+  };
+
 
 }
 

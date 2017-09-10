@@ -3,19 +3,16 @@
 #include <gns/common/basics.h>
 
 
-GNS_C_LINKAGE_BEGIN
-
+GNS_CODE_C(
   struct gnsThread;
 
-  const volatile gnsThread* gnsThreadStartup();
-  void gnsThreadShutdown();
+  extern gnsThread* gnsThreadStartup();
+  extern gnsThread* gnsThreadGetCurrent();
+  extern void gnsThreadShutdown();
 
-GNS_C_LINKAGE_END
+)
+GNS_CODE_CXX(
 
-#ifdef __cplusplus
-namespace gns {
+  struct Thread;
 
-  struct Thread {
-  };
-}
-#endif
+)

@@ -9,8 +9,9 @@ GNS_C_LINKAGE_BEGIN
     GNS_GLOBAL_SCOPE_ROCESS = 0x3,
   };
 
-
-# define GNS_GLOBAL_SCOPE_MASK  ( 0x3 << (GNS_ARCH_BITS - 2) )
+# define GNS_GLOBAL_SCOPE_SHIFT  (GNS_ARCH_BITS - 2)
+# define GNS_GLOBAL_SCOPE_MASK  ( 0x3 << GNS_GLOBAL_SCOPE_SHIFT )
+# define GNS_GLOBAL_INDEX_MASK  ( (1 << GNS_GLOBAL_SCOPE_SHIFT) - 1 )
 
   struct gnsGlobal {
     gnsNatural id; // SCOPE | INDEX
@@ -25,6 +26,7 @@ GNS_C_LINKAGE_BEGIN
   void gnsGlobalDel(gnsGlobal*);
 
   void* gnsFiberGlobalLookup(gnsGlobal*);
+  const volatile void* gnsProcessGlobalLookup(gnsGlobal*);
 
 
   void gnsGlobalPush(gnsGlobal*);
@@ -38,21 +40,37 @@ namespace gns {
   using GlobalScope = gnsGlobalScope;
   //constexpr auto ggg = gnsFiberGlobalLookup;
 
-  template<typename T, GlobalScope kind>
+  template<GlobalScope scope, typename T>
     struct Global: gnsGlobal {
 
-      Global(): gnsGlobal{ kind << (GNS_ARCH_BITS - 2) } {
+      Global(): gnsGlobal{ scope << GNS_GLOBAL_SCOPE_SHIFT } {
         gnsGlobalAdd(this);
       }
       ~Global() {
         gnsGlobalDel(this);
       }
 
+      operator Global<scope, void>&() {
+        return *reinterpret_cast<Global<scope, void>*>(this);
+      }
+    };
+
+  template<typename T>
+    struct FiberGlobal: Global<GNS_GLOBAL_SCOPE_FIBER, T> {
       operator T& () {
         return *reinterpret_cast<T*>(gnsFiberGlobalLookup(this));
       };
     };
 
+  template<GlobalScope scope, typename T>
+    struct ReadableGuard {
+      //
+      // operator const T& ()
+    };
 
+  template<GlobalScope scope, typename T>
+    struct WritableGuard {
+      // operator T& ()
+    };
 }
 #endif
