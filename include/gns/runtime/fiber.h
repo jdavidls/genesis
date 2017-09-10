@@ -72,6 +72,7 @@ namespace gns {
 
   struct FiberTracker: public gnsFiberTracker {
 
+    GNS_DECLARE_NON_COPYABLE(FiberTracker);
 
     FiberTracker():
       gnsFiberTracker{ gnsFiberAllocate() }
@@ -97,33 +98,7 @@ namespace gns {
       return gnsFiberJump(this, cmd);
     }
 
-
   };
-
-  template<typename T>
-    struct FiberLocal {
-
-      T initValue;
-
-      FiberLocal(const T& init): initValue(init) {
-        GNS_ASSERT( GNS_SECTION_CONTAINS(FIBER_LOCAL, this) );
-      }
-/*
-      operator T&() {
-
-      }
-
-      // T* operator -> () {}
-      T* operator & () {
-        return nullptr;
-      }
-
-      void operator = (const T& value) {
-
-      }
-*/
-
-    };
 
 }
 #endif

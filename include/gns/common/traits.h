@@ -18,4 +18,6 @@ namespace gns {
   template <typename T, bool V>
     using disableIf = typename std::enable_if<!V, T>::type;
 */
+
+  // GNS_OFFSET_OF(T1, ...): GNS_OFFET_OF(Class, type, accesor, reflector)
 }

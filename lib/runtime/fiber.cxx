@@ -10,12 +10,14 @@
 
 #include "fiber.hxx"
 
-using namespace gns;
 
+
+template<>
+  Array<Global<GNS_GLOBAL_SCOPE_FIBER, void>*>
+    GlobalManager<GNS_GLOBAL_SCOPE_FIBER>::globals{};
 
 namespace {
   static thread_local gnsFiber *__currentFiber = nullptr;
-
 
   static gnsFiber * gnsFiberSetCurrent(gnsFiber* fiber) {
     auto result = __currentFiber;
@@ -25,7 +27,8 @@ namespace {
 
   static thread_local struct {
      gnsFiberContinuator* ownerContinuator;
-     gnsBytes stack;
+     //gnsBytes stack;
+     //ArrayView<Byte> stack;
   } __fiberInit;
 }
 
@@ -33,11 +36,18 @@ gnsFiber * gnsFiberGetCurrent() {
   return __currentFiber;
 }
 
+void* gnsFiberGlobalLookup(gnsGlobal* global) {
+  auto& manager = __currentFiber->globalManager;
+  return manager.lookup(*global);
+}
 
 static void gnsFiberEntry();
 
 static Natural pageLength = 4096; // proces global var.
 static Natural stackLength = 1*1016*1024;
+
+
+
 
 gnsFiberTracker gnsFiberAllocate() {
 
@@ -70,7 +80,7 @@ gnsFiberTracker gnsFiberAllocate() {
     ucontext.uc_link = nullptr; // TODO vincular a un recoletor de fibers.
 
     __fiberInit.ownerContinuator = &selfContinuator;
-    __fiberInit.stack = { { stackLength }, stack };
+    //__fiberInit.stack = { { stackLength }, stack };
 
     // pasa estas variables por thread local
     makecontext(&ucontext, (void(*)())&gnsFiberEntry, 0);
@@ -84,18 +94,15 @@ gnsFiberTracker gnsFiberAllocate() {
 
 void gnsFiberEntry() {
 
-  gnsFiber self = {
-    __fiberInit.stack
-
+  gnsFiber self{
+    {},
+    //__fiberInit.stack
   };
 
   //auto owner =
   gnsFiberSetCurrent(&self);
 
-
   FiberTracker ownerTracker( std::move(__fiberInit.ownerContinuator) );
-
-
 
   GNS_LOG(ownerTracker.continuator);
 
@@ -121,6 +128,7 @@ void gnsFiberEntry() {
 gnsFiberCommand gnsFiberJump(gnsFiberTracker * tracker, gnsFiberCommand sendCmd) {
   // todo pop and push de fiber context in the thread local storage
 
+  // BUG: TODAS LAS VARIABLES DEBEN SER VOLATILES...  segun http://en.cppreference.com/w/c/language/volatile
   auto self = gnsFiberGetCurrent();
 
   gnsFiberContinuator selfContinuator;
@@ -163,5 +171,5 @@ void gnsFiberStartup() {
 }
 
 void gnsFiberShutdown() {
-
+  // clean all fiberglobals
 }

@@ -1,16 +1,34 @@
 #pragma once
 
 
+# define GNS_ARCH_BITS ( sizeof(void*) * 8 )
+
+//#define GNS_TEXT(S) { { GNS_C_ARRAY_LENGTH(S) - 1 }, S }
+
 #ifdef __cplusplus
-# define GNS_C_LINKAGE extern "C"
-# define GNS_C_LINKAGE_BEGIN GNS_C_LINKAGE {
-# define GNS_C_LINKAGE_END }
+# define GNS_SYMBOL_C(SYMBOL) :: gns ## SYMBOL
+# define GNS_SYMBOL_CXX(SYMBOL) :: gns :: SYMBOL
+# define GNS_SYMBOL(SYMBOL) GNS_SYMBOL_CXX(SYMBOL)
 #else
-# define GNS_C_LINKAGE extern
-# define GNS_C_LINKAGE_BEGIN
-# define GNS_C_LINKAGE_END
+# define GNS_SYMBOL_C(SYMBOL) gns ## SYMBOL
+# define GNS_SYMBOL(SYMBOL) GNS_SYMBOL_C(SYMBOL)
 #endif
 
+#ifdef __cplusplus
+# define GNS_C_LINKAGE_BEGIN extern "C" {
+# define GNS_C_LINKAGE_END }
+# define GNS_CXX_NAMESPACE(...) namespace gns { __VA_ARGS__ }
+# define GNS_C_LINKAGE(...) extern "C" { __VA_ARGS__ }
+# define GNS_CODE_C(...) extern "C" { __VA_ARGS__ }
+# define GNS_CODE_CXX(...) namespace gns { __VA_ARGS__ }
+#else
+# define GNS_C_LINKAGE_BEGIN
+# define GNS_C_LINKAGE_END
+# define GNS_C_LINKAGE(...) __VA_ARGS__
+# define GNS_CXX_NAMESPACE(...)
+# define GNS_CODE_C(...) __VA_ARGS__
+# define GNS_CODE_CXX(...)
+#endif
 
 #ifdef __cplusplus
 # define GNS_THREAD_LOCAL thread_local
@@ -28,11 +46,11 @@
 
 
 #ifndef __cplusplus
-# define GNS_STATIC_ASSERT(...)                                                     \
-    _Static_assert(__VA_ARGS__, #__VA_ARGS__)
+# define GNS_STATIC_ASSERT(MSG, ...)                                          \
+    _Static_assert(__VA_ARGS__, MSG "\n" #__VA_ARGS__)
 #else
-# define GNS_STATIC_ASSERT(...)                                                     \
-    static_assert(__VA_ARGS__, #__VA_ARGS__)
+# define GNS_STATIC_ASSERT(MSG, ...)                                          \
+    static_assert(__VA_ARGS__, MSG "\n" #__VA_ARGS__)
 #endif
 
 
@@ -42,6 +60,32 @@
 #else
 #define GNS_LOG(EXPR)
 #endif
+
+
+#ifdef __cplusplus
+# define GNS_DECLARE_NON_COPYABLE(typeName)                                         \
+    typeName (const typeName&) = delete;                                            \
+    typeName& operator= (const typeName&) = delete;
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -59,7 +103,7 @@
 #define GNS_ATTR_SECTION(SECTION_NAME)                                              \
   [[ gnu::section( # SECTION_NAME ) ]]
 
-#define GNS_ATTR_ALIAS(ALIAS)                                                 \
+#define GNS_ATTR_ALIAS(ALIAS)                                                       \
   [[ gnu::alias( # ALIAS ) ]]
 
 // GNU SECTION_SUPPORT

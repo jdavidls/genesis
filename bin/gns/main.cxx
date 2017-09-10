@@ -3,12 +3,11 @@
 #include <gns/common/basics.h>
 #include <gns/runtime/fiber.h>
 #include <gns/runtime/process.h>
-#include <gns/common/array.h>
+
+#include <gns/common/reflection.h>
 
 using namespace gns;
 
-
-GNS_FIBER_LOCAL_DEF(int) local = 88;
 
 
 int main(int argc, char* argv[]) {

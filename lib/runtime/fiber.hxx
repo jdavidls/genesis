@@ -3,13 +3,15 @@
 //#include <ucontext.h>
 
 #include <gns/runtime/fiber.h>
+#include "inc/global-manager.hxx"
 
-
+using namespace gns;
 
 struct gnsFiber {
+
+  GlobalManager<GNS_GLOBAL_SCOPE_FIBER> globalManager;
+
   gnsBytes stack;
-//  gnsNatural length;
-//  gnsFiberModuleLocals* module;
 };
 
 extern gnsFiber *gnsFiberGetCurrent();
@@ -33,7 +35,15 @@ struct gnsFiberContinuator {
 
 #ifdef __cplusplus
 namespace gns {
+  struct Fiber: gnsFiber {
 
+
+
+  };
+
+  struct FiberContinuator: gnsFiberContinuator {
+
+  };
 
 }
 #endif
