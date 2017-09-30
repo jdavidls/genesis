@@ -66,6 +66,32 @@
 #endif
 
 
+#ifdef __cplusplus
+# define GNS_DECLARE_NON_COPYABLE(typeName)                                         \
+    typeName (const typeName&) = delete;                                            \
+    typeName& operator= (const typeName&) = delete;
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #define GNS_CHECK_COMPAT(TypeName)                                            \
